@@ -38,7 +38,8 @@ def taylor_softmax(input, dim=None, _stacklevel=3, power=2):
     # type: (Tensor, Optional[int], int, int) -> Tensor
     if dim is None:
         dim = _get_softmax_dim('softmax', input.dim(), _stacklevel)
+    ret = 0
     for i in range(power + 1):
         ret += input.pow(i)
-    denom = input.sum(dim, True).clamp(1e-12).expand_as(input)
-    return input / denom
+    denom = ret.sum(dim, True).clamp(1e-12).expand_as(input)
+    return ret / denom

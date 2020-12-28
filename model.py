@@ -8,6 +8,8 @@ from embed_regularize import embedded_dropout
 from locked_dropout import LockedDropout
 from weight_drop import WeightDrop
 
+from taylor_softmax import taylor_softmax
+
 class RNNModel(nn.Module):
     """Container module with an encoder, a recurrent module, and a decoder."""
 
@@ -98,9 +100,11 @@ class RNNModel(nn.Module):
         logit = self.decoder(latent.view(-1, self.ninp))  # K个logit
 
         prior_logit = self.prior(output).contiguous().view(-1, self.n_experts)  # pi的logit
-        prior = nn.functional.softmax(prior_logit, -1)  # pi的softmax
+        #prior = nn.functional.softmax(prior_logit, -1)  # pi的softmax
+        prior = taylor_softmax(prior_logit, -1)  # pi的softmax
 
-        prob = nn.functional.softmax(logit.view(-1, self.ntoken), -1).view(-1, self.n_experts, self.ntoken)  # pi
+        # prob = nn.functional.softmax(logit.view(-1, self.ntoken), -1).view(-1, self.n_experts, self.ntoken)  # pi
+        prob = taylor_softmax(logit.view(-1, self.ntoken), -1).view(-1, self.n_experts, self.ntoken)  # pi
         prob = (prob * prior.unsqueeze(2).expand_as(prob)).sum(1)  # mos
 
         if return_prob:
